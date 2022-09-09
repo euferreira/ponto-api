@@ -17,12 +17,12 @@ class PontoEntity
     /**
      * @throws Exception
      */
-    public function hydrateToUpdate(array $data, array $recente): ?array
+    public function hydrateToUpdate(array $data, ?array $recente): ?array
     {
-        if (!empty($recente[0])) {
-            $objeto = $this->verificaNulidade($recente[0], $data);
-            $objeto['id'] = $recente[0]['id'];
-            $horaExtra = $this->verificaHoraExtra($objeto, $recente[0]);
+        if (!empty($recente)) {
+            $objeto = $this->verificaNulidade($recente, $data);
+            $objeto['id'] = $recente['id'];
+            $horaExtra = $this->verificaHoraExtra($objeto, $recente);
             if ($horaExtra) {
                 $objeto['hora_extra'] = $horaExtra;
             }
@@ -31,9 +31,6 @@ class PontoEntity
         return null;
     }
 
-    /**
-     * @throws Exception
-     */
     private function verificaNulidade(array &$recente, array $data): array
     {
         $registro = new DateTime($data['registro'], new \DateTimeZone('America/Sao_Paulo'));
@@ -88,7 +85,12 @@ class PontoEntity
 
     public function verificaHoraExtra(array $data, array $recente): ?string
     {
-        //TODO - Implementar
+        list($h, $m, $s) = explode(':', $this->configuracao['cargaHoraria']);
+        $estimativaSaida = date('Y-m-d H:i:s', strtotime($recente['entrada1']) + $s + ($m * 60) + ($h * 3600));
+        if (array_key_exists('saida2', $data)) {
+            $estimativaSaida = new DateTime($estimativaSaida, new \DateTimeZone('America/Sao_Paulo'));
+            return $data['saida2']->diff($estimativaSaida)->format('%H:%I:%S');
+        }
         return null;
     }
 }

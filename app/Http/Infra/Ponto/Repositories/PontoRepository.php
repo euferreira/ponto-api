@@ -16,9 +16,6 @@ class PontoRepository implements IPontoRepository
         $this->datasource = $pontoDatasource;
     }
 
-    /**
-     * @throws Exception
-     */
     public function create(array $data, array $configuracao): array
     {
         $batidaRecente = $this->obterBatidaRecente($data);

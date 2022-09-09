@@ -23,19 +23,23 @@ class PontoDatasouce implements IPontoDatasource
 
     public function obterBatidaRecente(): ?array
     {
-        $last = DB::select("SELECT * FROM ponto.pontos
-         WHERE usuario_id = :usuario_id
-         AND DATE(created_at) = DATE(NOW())
-         AND saida2 IS NULL
-         ORDER BY created_at DESC LIMIT 1", ['usuario_id' => auth()->user()->getAuthIdentifier()]);
-        $last = json_decode(json_encode($last), true);
-
-        return $last ?? null;
+        $value = DB::table('ponto.pontos')
+            ->select()
+            ->where('usuario_id', "=", auth()->user()->getAuthIdentifier())
+            ->whereDate("created_at", "=", date('Y-m-d'))
+            ->whereNull("saida2")
+            ->orderBy("created_at", "desc")
+            ->limit(1)
+            ->get()
+            ->first();
+        return $value != null ? json_decode(json_encode($value), true) : null;
     }
 
     public function update(array $data): ?array
     {
-        $update = Ponto::where('id', $data['id'])->where('usuario_id', auth()->user()->getAuthIdentifier())->update($data);
+        $update = Ponto::where('id', $data['id'])
+            ->where('usuario_id', auth()->user()->getAuthIdentifier())
+            ->update($data);
         return [
             'update' => $update > 0,
         ];
