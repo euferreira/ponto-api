@@ -17,16 +17,18 @@ class PontoEntity
     /**
      * @throws Exception
      */
-    public function hydrateToUpdate(array $data, ?array $recente): ?array
+    public function hydrateToUpdate(array $data, ?array $batidaRecente): ?array
     {
-        if (!empty($recente)) {
-            $objeto = $this->verificaNulidade($recente, $data);
-            $objeto['id'] = $recente['id'];
-            $horaExtra = $this->verificaHoraExtra($objeto, $recente);
-            if ($horaExtra) {
-                $objeto['hora_extra'] = $horaExtra;
+        if (!empty($batidaRecente)) {
+            $retorno = $this->verificaNulidade($batidaRecente, $data);
+            $retorno['id'] = $batidaRecente['id'];
+            if (!is_null($batidaRecente['saida2'])) {
+                $horaExtra = $this->verificaHoraExtra($retorno, $batidaRecente);
+                if ($horaExtra) {
+                    $retorno['hora_extra'] = $horaExtra;
+                }
             }
-            return $objeto;
+            return $retorno;
         }
         return null;
     }
@@ -57,22 +59,19 @@ class PontoEntity
 
     public function previsaoSaida(array $data): string
     {
-        $cargaHoraria = null;
         switch (array_key_first($data)) {
             case 'entrada1':
-                $cargaHoraria = $this->configuracao['cargaHoraria'];
-                break;
-
             case 'saida1':
-                $cargaHoraria = "07:00:00";
+                $cargaHoraria = $this->configuracao['cargaHoraria'];
                 break;
 
             case 'entrada2':
                 $cargaHoraria = "05:00:00";
                 break;
 
-            case 'saida2':
-                return "";
+            default:
+                $cargaHoraria = "00:00:00";
+                break;
         }
 
         /**
@@ -85,11 +84,10 @@ class PontoEntity
 
     public function verificaHoraExtra(array $data, array $recente): ?string
     {
-        list($h, $m, $s) = explode(':', $this->configuracao['cargaHoraria']);
-        $estimativaSaida = date('Y-m-d H:i:s', strtotime($recente['entrada1']) + $s + ($m * 60) + ($h * 3600));
-        if (array_key_exists('saida2', $data)) {
-            $estimativaSaida = new DateTime($estimativaSaida, new \DateTimeZone('America/Sao_Paulo'));
-            return $data['saida2']->diff($estimativaSaida)->format('%H:%I:%S');
+        $previsaoSaida = $this->previsaoSaida(['entrada2' => new DateTime($recente['entrada2'])]);
+        $diferenca = strtotime($data['saida2']->format('Y-m-d H:i:s')) - strtotime($previsaoSaida);
+        if ($diferenca > 0) {
+            return date('H:i:s', $diferenca);
         }
         return null;
     }
