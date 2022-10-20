@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use Firebase\JWT\ExpiredException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -52,25 +53,33 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $e)
     {
-        switch ($e->getCode()) {
-            case 400:
-                return response()->json([
-                    'message' => 'Bad Request',
-                    'trace' => $e->getMessage(),
-                ], 400);
+        $response = [
+            'message' => $this->handlerMessage($e),
+            'code' => $e->getCode(),
+        ];
+        $code = $this->getCode($e);
+        return \response()->json($response, $code);
+    }
 
-            case 404:
-                return response()->json([
-                    'message' => 'Not found',
-                    'trace' => $e->getMessage(),
-                ], 404);
-
-            default:
-                return response()->json([
-                    'message' => 'Internal server error',
-                    'trace' => $e->getMessage(),
-                    'code' => $e->getCode(),
-                ], 500);
+    public function getCode(Throwable $e): int
+    {
+        if ($e instanceof HttpException) {
+            return $e->getStatusCode();
         }
+        if ($e instanceof ExpiredException) {
+            return 401;
+        }
+        return 500;
+    }
+
+    public function handlerMessage(Throwable $e): string
+    {
+        if ($e instanceof HttpException) {
+            return $e->getMessage();
+        }
+        if ($e instanceof ExpiredException) {
+            return 'Token expirado';
+        }
+        return 'Erro interno';
     }
 }

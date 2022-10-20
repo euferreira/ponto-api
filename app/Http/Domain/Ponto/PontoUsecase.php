@@ -5,6 +5,7 @@ namespace App\Http\Domain\Ponto;
 use App\Http\Domain\Configuracoes\Contracts\IConfiguracaoRepository;
 use App\Http\Domain\Ponto\Contracts\IPontoRepository;
 use App\Http\Domain\Ponto\Contracts\IPontoUsecase;
+use App\Http\Domain\Ponto\Entity\PontoEntity;
 use DateTime;
 
 class PontoUsecase implements IPontoUsecase
@@ -20,21 +21,28 @@ class PontoUsecase implements IPontoUsecase
 
     public function create(array $params): array
     {
-        if (!$this->isValidDateTime($params['registro'])) {
+        if (!$this->repository->isValidDatetime($params['registro'])) {
             abort(400, 'Data inválida');
         }
 
         $configuracao = $this->configuracaoRepository->getByUser();
         if (empty($configuracao)) {
-            abort(400, 'Configuração não encontrada');
+            abort(404, 'Configuração não encontrada');
         }
 
-        return $this->repository->create($params, $configuracao);
-    }
+        $batidaRecente = $this->repository->obterBatidaRecente($params);
+        $ponto = new PontoEntity($configuracao);
 
-    private function isValidDateTime(string $dateTime): bool
-    {
-        $dateTime = DateTime::createFromFormat('Y-m-d H:i:s', $dateTime);
-        return $dateTime && $dateTime->format('Y-m-d H:i:s') === $dateTime->format('Y-m-d H:i:s');
+        if ($batidaRecente) {
+            return $this->repository->update($params, $batidaRecente, $configuracao);
+        }
+
+        $create = $this->repository->create($params);
+        $previsaoSaida = $ponto->previsaoSaida($create);
+
+        return [
+            'create' => $create,
+            'previsaoSaida' => $previsaoSaida
+        ];
     }
 }

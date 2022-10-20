@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Ponto extends Model
+class Ponto extends Model implements \JsonSerializable
 {
     protected $hidden = [
         'created_at', 'updated_at'

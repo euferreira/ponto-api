@@ -5,6 +5,7 @@ namespace App\Http\Infra\Ponto\Repositories;
 use App\Http\Domain\Ponto\Contracts\IPontoRepository;
 use App\Http\Domain\Ponto\Entity\PontoEntity;
 use App\Http\Infra\Ponto\IPontoDatasource;
+use DateTime;
 use Exception;
 
 class PontoRepository implements IPontoRepository
@@ -16,27 +17,13 @@ class PontoRepository implements IPontoRepository
         $this->datasource = $pontoDatasource;
     }
 
-    public function create(array $data, array $configuracao): array
+    public function create(array $params): array
     {
-        $batidaRecente = $this->obterBatidaRecente($data);
-        $ponto = new PontoEntity($configuracao);
-        $objeto = $ponto->hydrateToUpdate($data, $batidaRecente);
-
-        if ($batidaRecente) {
-            $update = $this->update($objeto);
-            $previsaoSaida = $ponto->previsaoSaida($objeto);
-            return [
-                'isUpdated' => $update,
-                'previsaoSaida' => $previsaoSaida
-            ];
+        $create = $this->datasource->create($params);
+        if ($create['entrada1'] instanceof DateTime) {
+            $create['entrada1'] = new DateTime($create['entrada1']->format('Y-m-d H:i:s'));
         }
-
-        $create = $this->datasource->create($data);
-        $previsaoSaida = $ponto->previsaoSaida($create);
-        return [
-            'create' => $create,
-            'previsaoSaida' => $previsaoSaida
-        ];
+        return $create;
     }
 
     public function obterBatidaRecente(array $data): ?array
@@ -44,8 +31,24 @@ class PontoRepository implements IPontoRepository
         return $this->datasource->obterBatidaRecente();
     }
 
-    public function update(array $data): array
+    public function update(array $params, array $batidaRecente, array $configuracao): array
     {
-        return $this->datasource->update($data);
+        $ponto = new PontoEntity($configuracao);
+        $result = $ponto->hydrateToUpdate($params, $batidaRecente);
+        $previsaoSaida = $ponto->previsaoSaida($result);
+        $update = $this->datasource->update($result);
+
+        if ($update) {
+            return [
+                'previsaoSaida' => $previsaoSaida,
+            ];
+        }
+        return [];
+    }
+
+    public function isValidDatetime(string $dateTime): bool
+    {
+        $dateTime = DateTime::createFromFormat('Y-m-d H:i:s', $dateTime);
+        return $dateTime && $dateTime->format('Y-m-d H:i:s') === $dateTime->format('Y-m-d H:i:s');
     }
 }
