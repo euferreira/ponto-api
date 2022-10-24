@@ -9,4 +9,6 @@ interface IPontoDatasource
     public function obterBatidaRecente(): ?array;
 
     public function update(array $data): ?array;
+
+    public function obterBatidaHoje(array $param): ?array;
 }

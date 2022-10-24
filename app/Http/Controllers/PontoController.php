@@ -19,10 +19,11 @@ class PontoController extends Controller
      */
     public function create(): array
     {
-        $this->validate(request(), [
-            'registro' => 'required',
-        ]);
+        $agora = new \DateTime('now');
+        $agora = $agora->format('Y-m-d H:i:s');
 
-        return $this->pontoUsecase->create(request()->all());
+        return $this->pontoUsecase->create([
+            'registro' => $agora,
+        ]);
     }
 }

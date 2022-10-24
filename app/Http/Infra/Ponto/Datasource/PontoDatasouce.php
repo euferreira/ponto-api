@@ -44,4 +44,26 @@ class PontoDatasouce implements IPontoDatasource
             'update' => $update > 0,
         ];
     }
+
+    public function obterBatidaHoje(array $param): ?array
+    {
+        /*
+         * SELECT * FROM ponto.pontos
+            WHERE usuario_id = 1
+            AND DAY(created_at) = DAY((SELECT created_at from ponto.pontos
+            where usuario_id = 1
+            and date(created_at) = date(now())
+            and saida2 is not null
+            order by created_at desc
+            limit 1));
+         * */
+
+
+        /*$value = DB::table('ponto.pontos')
+            ->select()
+            ->where('usuario_id', '=', auth()->user()->getAuthIdentifier())
+            ->whereDay("created_at", "=", date('d', strtotime()))*/
+
+        return null;
+    }
 }
